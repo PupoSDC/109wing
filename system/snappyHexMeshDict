@@ -1,0 +1,157 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  5                                     |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Which of the steps to run
+castellatedMesh true;
+snap            true;
+addLayers       true;
+
+
+// Geometry. Definition of all surfaces. 
+
+geometry
+{
+    wing     // User defined region name
+    {
+        type    triSurfaceMesh;
+        file    "wing.obj";        // surface geometry OBJ file
+        regions
+        {
+            wing 
+            {
+                name wing;
+            }
+
+            winglet 
+            {
+                name winglet;
+            }
+
+        }
+    }
+};
+
+
+
+// Settings for the castellatedMesh generation.
+castellatedMeshControls
+{
+
+    maxLocalCells       100000;
+    maxGlobalCells      2000000;
+    minRefinementCells  10;
+    nCellsBetweenLevels 2;
+    resolveFeatureAngle 90;
+
+    features ();
+
+    refinementSurfaces
+    {
+        wing
+        {
+            level (4 4);
+        }
+
+        winglet
+        {
+            level (4 4);
+        }
+    }
+
+
+    refinementRegions
+    {
+    }
+
+    locationInMesh (0.0 -3.0 0.0);
+
+    allowFreeStandingZoneFaces true;
+}
+
+
+
+// Settings for the snapping.
+snapControls
+{
+    nSmoothPatch           3;
+    tolerance              4.0;
+    nSolveIter             30;
+    nRelaxIter             5;
+}
+
+// Settings for the layer addition.
+addLayersControls
+{
+    relativeSizes       true;
+    expansionRatio      1.1;
+    finalLayerThickness 0.5;
+    minThickness        0.05;
+    nGrow               0;
+
+    // Per final patch (so not geometry!) the layer information
+    layers
+    {
+        wing
+        {
+            nSurfaceLayers 7;
+        }
+        winglet
+        {
+            nSurfaceLayers 7;
+        }
+    }
+
+    // Advanced settings
+    featureAngle              30;
+    nRelaxIter                5;
+    nSmoothSurfaceNormals     1;
+    nSmoothNormals            3;
+    nSmoothThickness          10;
+    maxFaceThicknessRatio     0.5;
+    maxThicknessToMedialRatio 0.3;
+    minMedianAxisAngle        90;
+    nBufferCellsNoExtrude     0;
+    nLayerIter                50;
+}
+
+// Generic mesh quality settings. At any undoable phase these determine
+// where to undo.
+meshQualityControls
+{
+    maxNonOrtho         65;
+    maxBoundarySkewness 20;
+    maxInternalSkewness 4;
+    maxConcave          80;
+    minVol              1e-13;
+    minTetQuality       1e-30;
+    minArea             -1;
+    minTwist            0.05;
+    minDeterminant      0.001;
+    minFaceWeight       0.05;
+    minVolRatio         0.01;
+    minTriangleTwist    -1;
+    nSmoothScale        4;
+    errorReduction      0.75;
+}
+
+// Advanced
+
+// Merge tolerance. Is fraction of overall bounding box of initial mesh.
+// Note: the write tolerance needs to be higher than this.
+mergeTolerance 1e-6;
+
+
+// ************************************************************************* //
