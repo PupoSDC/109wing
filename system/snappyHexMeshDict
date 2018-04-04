@@ -20,7 +20,7 @@ snap            true;
 addLayers       true;
 
 
-// Geometry. Definition of all surfaces. 
+// Geometry. Definition of all surfaces.
 
 geometry
 {
@@ -30,16 +30,10 @@ geometry
         file    "wing.obj";        // surface geometry OBJ file
         regions
         {
-            wing 
+            wing
             {
-                name wing;
+                name wing_surface;
             }
-
-            winglet 
-            {
-                name winglet;
-            }
-
         }
     }
 };
@@ -53,19 +47,14 @@ castellatedMeshControls
     maxLocalCells       100000;
     maxGlobalCells      2000000;
     minRefinementCells  10;
-    nCellsBetweenLevels 2;
-    resolveFeatureAngle 90;
+    nCellsBetweenLevels 4;
+    resolveFeatureAngle 20;
 
     features ();
 
     refinementSurfaces
     {
-        wing
-        {
-            level (4 4);
-        }
-
-        winglet
+        wing_surface
         {
             level (4 4);
         }
@@ -86,7 +75,7 @@ castellatedMeshControls
 // Settings for the snapping.
 snapControls
 {
-    nSmoothPatch           3;
+    nSmoothPatch           10;
     tolerance              4.0;
     nSolveIter             30;
     nRelaxIter             5;
@@ -95,27 +84,23 @@ snapControls
 // Settings for the layer addition.
 addLayersControls
 {
-    relativeSizes       true;
+    relativeSizes       false;
     expansionRatio      1.1;
-    finalLayerThickness 0.5;
-    minThickness        0.05;
+    finalLayerThickness 0.01;
+    minThickness        0.00025;
     nGrow               0;
 
     // Per final patch (so not geometry!) the layer information
     layers
     {
-        wing
+        wing_surface
         {
-            nSurfaceLayers 7;
-        }
-        winglet
-        {
-            nSurfaceLayers 7;
+            nSurfaceLayers 6;
         }
     }
 
     // Advanced settings
-    featureAngle              30;
+    featureAngle              90;
     nRelaxIter                5;
     nSmoothSurfaceNormals     1;
     nSmoothNormals            3;
