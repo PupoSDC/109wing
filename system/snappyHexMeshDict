@@ -74,10 +74,10 @@ snapControls
 // Settings for the layer addition.
 addLayersControls
 {
-    relativeSizes       false;
+    relativeSizes       true;
     expansionRatio      1.4;
-    finalLayerThickness 0.1;
-    minThickness        0.000001;
+    finalLayerThickness 0.5;
+    minThickness        0.01;
     nGrow               0;
 
     // Per final patch (so not geometry!) the layer information
