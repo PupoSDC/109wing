@@ -15,8 +15,8 @@ FoamFile
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 // Which of the steps to run
-castellatedMesh true;
-snap            true;
+castellatedMesh false;
+snap            false;
 addLayers       true;
 
 
@@ -24,17 +24,10 @@ addLayers       true;
 
 geometry
 {
-    wing     // User defined region name
+    "wing.stl"    // User defined region name
     {
         type    triSurfaceMesh;
-        file    "wing.obj";        // surface geometry OBJ file
-        regions
-        {
-            wing
-            {
-                name wing_surface;
-            }
-        }
+        name    wing;
     }
 };
 
@@ -44,19 +37,20 @@ geometry
 castellatedMeshControls
 {
 
-    maxLocalCells       100000;
-    maxGlobalCells      2000000;
-    minRefinementCells  10;
-    nCellsBetweenLevels 4;
-    resolveFeatureAngle 20;
+    maxLocalCells               100000;
+    maxGlobalCells             2000000;
+    minRefinementCells         10;
+    nCellsBetweenLevels        4;
+    resolveFeatureAngle        20;
+    allowFreeStandingZoneFaces true;
 
     features ();
 
     refinementSurfaces
     {
-        wing_surface
+        wing
         {
-            level (4 4);
+            level (5 5);
         }
     }
 
@@ -66,11 +60,7 @@ castellatedMeshControls
     }
 
     locationInMesh (0.0 -3.0 0.0);
-
-    allowFreeStandingZoneFaces true;
 }
-
-
 
 // Settings for the snapping.
 snapControls
@@ -85,28 +75,29 @@ snapControls
 addLayersControls
 {
     relativeSizes       false;
-    expansionRatio      1.1;
-    finalLayerThickness 0.01;
-    minThickness        0.00025;
+    expansionRatio      1.4;
+    finalLayerThickness 0.1;
+    minThickness        0.000001;
     nGrow               0;
 
     // Per final patch (so not geometry!) the layer information
     layers
     {
-        wing_surface
+        wing
         {
-            nSurfaceLayers 6;
+            nSurfaceLayers 20;
         }
     }
 
     // Advanced settings
-    featureAngle              90;
+    featureAngle              85;
+    slipFeatureAngle          25;
     nRelaxIter                5;
-    nSmoothSurfaceNormals     1;
-    nSmoothNormals            3;
+    nSmoothSurfaceNormals     50;
+    nSmoothNormals            50;
     nSmoothThickness          10;
-    maxFaceThicknessRatio     0.5;
-    maxThicknessToMedialRatio 0.3;
+    maxFaceThicknessRatio     0.8;
+    maxThicknessToMedialRatio 0.9;
     minMedianAxisAngle        90;
     nBufferCellsNoExtrude     0;
     nLayerIter                50;
