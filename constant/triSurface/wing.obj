@@ -1,5 +1,6 @@
 # This file uses millimeters as units for non-parametric coordinates.
 
+mtllib wing_v03.mtl
 g default
 v -0.994286 0.160132 4.710823
 v -0.994242 0.147676 4.710813
@@ -4705,7 +4706,7 @@ vn 0.000000 0.000000 1.000000
 vn 0.000000 0.000000 1.000000
 vn 0.000000 0.000000 1.000000
 s 1
-g wing group1
+g wing_v02 group1
 usemtl lambert2SG
 f 1919//1 39//2 1918//3 1920//4
 f 1919//1 1920//4 314//5 1518//6
