@@ -114,27 +114,22 @@ class BlockMesh:
 ################################################################################
 
 # Reads a 2D array aerofoil point index, and converts it to a 3D point array
-def readAerofoil(file, position, scale, rotation):
-    with open(file,'r') as file:
-        array = []
-        for line in file:
-            array.append( map( float, line.split() ) )
-            array[-1].append(0.0);
+def readAerofoil( file, position, scale ):
     response = [];
-    for point in array:
-        response.append([
-            point[0] * scale + position[0],
-            point[1] * scale + position[1],
-            point[2] + position[2]
-        ]);
+    with open(file,'r') as file:
+        for line in file:
+            response.append( map( float, line.split() ) )
+            response[-1][0] = response[-1][0] * scale + position[0];
+            response[-1][1] = response[-1][1] * scale + position[1];
+            response[-1].append(  position[2] );
     return response;
 
 # Creates a wing section
-def makeWingSection( block_mesh, section_1, section_2, radius, n_points, grade ):
+def makeWingSection( block_mesh, section_1, section_2, radius, points, grade ):
     for i in range( 0, len(section_1) - 1 ):
         alpha_i = ( 1.0 / 2.0 + float(i+0) / (len(section_1)-1) ) * math.pi;
         alpha_j = ( 1.0 / 2.0 + float(i+1) / (len(section_1)-1) ) * math.pi;
-        points = [
+        ps = [
             section_1[ i+0 ],
             section_1[ i+1 ],
             section_2[ i+1 ],
@@ -161,63 +156,90 @@ def makeWingSection( block_mesh, section_1, section_2, radius, n_points, grade )
             ]
         ];
 
-        block_mesh.addBlock( points, n_points, grade );
-        block_mesh.addFace(
-            "wing", [ points[0], points[1], points[2], points[3] ], "patch"
-        );
-        block_mesh.addFace(
-            "freestream", [ points[4], points[5], points[6], points[7] ], "patch"
-        );
+        block_mesh.addBlock( ps, points, grade );
+        block_mesh.addFace( "wing",       ps[0:4], "wall" );
+        block_mesh.addFace( "freestream", ps[4:8], "patch" );
 
         if section_1[i][2] == 0.0:
-            block_mesh.addFace(
-                "left",
-                [ points[0], points[1], points[4], points[5] ],
-                "symmetry"
-            );
+            block_mesh.addFace("left", [ps[0],ps[1],ps[4],ps[5]], "symmetry");
 
-    p_0 = [ section_1[0][0], radius, section_1[0][2] ];
-    p_1 = [ radius,          radius, section_1[0][2] ];
-    p_2 = [ radius,          radius, section_2[0][2] ];
-    p_3 = [ section_2[0][0], radius, section_2[0][2] ];
-    p_4 = section_1[0];
-    p_5 = [ radius, section_1[0][1], section_1[0][2] ];
-    p_6 = [ radius, section_2[0][1], section_2[0][2] ];
-    p_7 = section_2[0];
-    p_8 = section_1[-1];
-    p_9 = [ radius, section_1[-1][1], section_1[-1][2] ];
-    p_a = [ radius, section_2[-1][1], section_2[-1][2] ];
-    p_b = section_2[-1];
-    p_c = [ section_1[0][0],  -1.0 * radius, section_1[0][2]  ];
-    p_d = [ radius,           -1.0 * radius, section_1[-1][2] ];
-    p_e = [ radius,           -1.0 * radius, section_2[-1][2] ];
-    p_f = [ section_2[0][0], -1.0 * radius, section_2[-1][2] ];
+    # calculate mid points of trailing edge
+    midpoint_1 = [
+        (section_1[-1][0] + section_1[0][0]) / 2.0,
+        (section_1[-1][1] + section_1[0][1]) / 2.0,
+        section_1[0][2]
+    ];
+    midpoint_2 = [
+        (section_2[-1][0] + section_2[0][0]) / 2.0,
+        (section_2[-1][1] + section_2[0][1]) / 2.0,
+        section_2[0][2]
+    ];
 
+    ps = [
+        # Top surface
+        [ section_1[0][0], radius, section_1[0][2] ],   # 0
+        [ radius,          radius, section_1[0][2] ],   # 1
+        [ radius,          radius, section_2[0][2] ],   # 2
+        [ section_2[0][0], radius, section_2[0][2] ],   # 3
+        # surface leveled with top of trailing edge
+        section_1[0],                                   # 4
+        [ radius, section_1[0][1], section_1[0][2] ],   # 5
+        [ radius, section_2[0][1], section_2[0][2] ],   # 6
+        section_2[0],                                   # 7
+        #mid section
+        midpoint_1,                                     # 8
+        [ radius, midpoint_1[1], midpoint_1[2] ],       # 9
+        [ radius, midpoint_2[1], midpoint_2[2] ],       # 10
+        midpoint_2,                                     # 11
+        # surface leveled with bottom of trailing edge
+        section_1[-1],                                  # 12
+        [ radius, section_1[-1][1], section_1[-1][2] ], # 13
+        [ radius, section_2[-1][1], section_2[-1][2] ], # 14
+        section_2[-1],                                  # 15
+        # bottom surface
+        [ section_1[0][0], -radius, section_1[0][2]  ], # 16
+        [ radius,          -radius, section_1[-1][2] ], # 17
+        [ radius,          -radius, section_2[-1][2] ], # 18
+        [ section_2[0][0], -radius, section_2[-1][2] ]  # 19
+    ];
+
+    # Create trailing edge blocks
     block_mesh.addBlock(
-        [ p_0, p_1, p_2, p_3, p_4, p_5, p_6, p_7   ],
-        [ n_points[2], n_points[1], n_points[2]    ],
-        [ grade[2],    grade[1],    1.0 / grade[2] ]
+        ps[0:8],
+        [ points[2], points[1], points[2]      ],
+        [ grade[2],   grade[1], 1.0 / grade[2] ]
     );
     block_mesh.addBlock(
-        [ p_4, p_5, p_6, p_7, p_8, p_9, p_a, p_b   ],
-        [ n_points[2], n_points[1], 1        ],
-        [ grade[2],    grade[1],    grade[2] ]
+        ps[4:12],
+        [ points[2], points[1], 1 ],
+        [ grade[2],  grade[1],  1 ]
     );
     block_mesh.addBlock(
-        [ p_8, p_9, p_a, p_b, p_c, p_d, p_e, p_f ],
-        [ n_points[2], n_points[1], n_points[2] ],
-        [ grade[2],    grade[1],    grade[2]    ]
+        ps[8:16],
+        [ points[2], points[1], 1 ],
+        [ grade[2],  grade[1],  1 ]
     );
-    block_mesh.addFace( "wing",       [ p_4, p_7, p_8, p_b ], "patch" );
-    block_mesh.addFace( "freestream", [ p_0, p_1, p_2, p_3 ], "patch" );
-    block_mesh.addFace( "freestream", [ p_f, p_e, p_d, p_c ], "patch" );
-    block_mesh.addFace( "freestream", [ p_1, p_2, p_6, p_5 ], "patch" );
-    block_mesh.addFace( "freestream", [ p_d, p_e, p_a, p_9 ], "patch" );
-    block_mesh.addFace( "freestream", [ p_9, p_a, p_6, p_5 ], "patch" );
+    block_mesh.addBlock(
+        ps[12:20],
+        [ points[2], points[1], points[2] ],
+        [ grade[2],   grade[1],  grade[2] ]
+    );
+
+    # Create trailing edge faces
+    block_mesh.addFace("wing",      [ ps[4], ps[7], ps[8], ps[11] ], "wall");
+    block_mesh.addFace("wing",      [ ps[8], ps[11],ps[12],ps[15] ], "wall");
+    block_mesh.addFace("freestream",[ ps[0], ps[1], ps[2], ps[3]  ], "patch");
+    block_mesh.addFace("freestream",[ ps[19],ps[18],ps[17],ps[16] ], "patch");
+    block_mesh.addFace("freestream",[ ps[1], ps[2], ps[6], ps[5]  ], "patch");
+    block_mesh.addFace("freestream",[ ps[13],ps[14],ps[10],ps[9]  ], "patch");
+    block_mesh.addFace("freestream",[ ps[9], ps[10],ps[6], ps[5]  ], "patch");
+    block_mesh.addFace("freestream",[ ps[17],ps[18],ps[14],ps[13] ], "patch");
+    # create left faces for trailing edge
     if section_1[0][2] == 0.0:
-        block_mesh.addFace( "left", [ p_0, p_1, p_4, p_5 ], "symmetry" );
-        block_mesh.addFace( "left", [ p_4, p_5, p_8, p_9 ], "symmetry" );
-        block_mesh.addFace( "left", [ p_8, p_9, p_c, p_d ], "symmetry" );
+        block_mesh.addFace("left", [ ps[0], ps[1], ps[4] ,ps[5]  ], "symmetry");
+        block_mesh.addFace("left", [ ps[4], ps[5], ps[8] ,ps[9]  ], "symmetry");
+        block_mesh.addFace("left", [ ps[8], ps[9], ps[12],ps[13] ], "symmetry");
+        block_mesh.addFace("left", [ ps[12],ps[13],ps[16],ps[17] ], "symmetry");
 
 #Creates a winglet section.
 def makeWinglet( block_mesh, section, points, radius, n_points, grade ):
@@ -307,8 +329,8 @@ def makeWinglet( block_mesh, section, points, radius, n_points, grade ):
                         [ radius,        ps[3][1], ps[3][2] ], # point 3 extrusion to wall
                         a2, # centre point away
                     ],
-                    [ n_points[2], n_points[1], n_points[2] ],
-                    [ grade[2],    grade[1],    1.0 / grade[2]    ]
+                    [ n_points[1], n_points[1], n_points[2] ],
+                    [ grade[1],    grade[1],    grade[2]    ]
                 );
                 block_mesh.addBlock(
                     [
@@ -346,7 +368,7 @@ def makeWinglet( block_mesh, section, points, radius, n_points, grade ):
                         [ ps[0][0], ps[0][1], ps[0][2] ], # point 0
                         [ ps[3][0], ps[3][1], ps[3][2] ], # point 3
                         a1  # centre point
-                    ], "patch"
+                    ], "wall"
                 );
                 block_mesh.addFace(
                     "freestream", [
@@ -359,7 +381,7 @@ def makeWinglet( block_mesh, section, points, radius, n_points, grade ):
 
 
             block_mesh.addFace(
-                "wing", [ ps[0], ps[1], ps[2], ps[3] ], "patch"
+                "wing", [ ps[0], ps[1], ps[2], ps[3] ], "wall"
             );
             block_mesh.addFace(
                 "freestream", [ ps[4], ps[5], ps[6], ps[7] ], "patch"
@@ -371,25 +393,14 @@ def makeWinglet( block_mesh, section, points, radius, n_points, grade ):
 
 block_mesh = BlockMesh();
 
-# print readAerofoil('constant/aerofoils/NACA_2411');
-root   = readAerofoil(
-    'constant/aerofoils/NACA_2414',
-    [   0.0, 0.0,   0.0 ],
-    2.143,
-    0
-);
-tip    = readAerofoil(
-    'constant/aerofoils/NACA_2411',
-    [ 0.293, 0.0, 4.215 ],
-    1.050,
-    0
-);
+root = readAerofoil('constant/aerofoils/NACA_2414', [ 0.0,   0.0, 0.0   ], 2.143 );
+tip  = readAerofoil('constant/aerofoils/NACA_2411', [ 0.293, 0.0, 4.215 ], 1.050 );
 
 makeWingSection(
     block_mesh,
     root,
     tip,
-    3.0,
+    15.0,
     [1,30,20],    # 30,20
     [1,1,1000]  # 1000
 );
@@ -397,8 +408,8 @@ makeWingSection(
 makeWinglet(
     block_mesh,
     tip,
-    2,
-    3.0,
+    15,
+    15.0,
     [1,1,20],    # 1,20
     [1,1,1000]  # 1000
 );
