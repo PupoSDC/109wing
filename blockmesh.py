@@ -252,81 +252,109 @@ def makeWingSection( block_mesh, sec_1, sec_2, p_cut, radius, points, grade ):
             block_mesh.addFace("freestream", [te_2,tp_2,tp_1,te_1],   "patch");
             block_mesh.addFace("freestream", [sp[6],sp[5],tp_2,te_2], "patch");
 
+#Creates a winglet section.
+def makeWinglet( block_mesh, section, radius, points, grade ):
+    n_leads  = 0; k = 0;
+    ps = range(0,8);
 
-##Creates a winglet section.
-#def makeWinglet( block_mesh, section, radius, points, grade ):
-#    for i in range(1, (len(section)-1)/2 ):
-#        for j in range(0, points[0] ):
-#
-#            # calculate  auxiliary values for the first section
-#            d_x_i =    ( section[-2-i][0] - section[i-1][0] );
-#            r_w_i = abs( section[-2-i][1] - section[i-1][1] ) / 2.0;
-#            c_w_i =    ( section[-2-i][1] + section[i-1][1] ) / 2.0;
-#            alp_i = 2.0 * math.pi * float(i+0) / len(section);
-#
-#            # calculate auxiliary values for the second section
-#            d_x_j =    ( section[-3-i][0] - section[i+0][0] );
-#            r_w_j = abs( section[-3-i][1] - section[i+0][1] ) / 2.0;
-#            c_w_j =    ( section[-3-i][1] + section[i+0][1] ) / 2.0;
-#            alp_j = 2.0 * math.pi * float(i+1) / len(section);
-#
-#            # displacement indexes
-#            ind_a = float(j) / float( points[0] );
-#            ind_b = float(j+1) / float( points[0] );
-#            phi_a = math.pi * ind_i;
-#            phi_b = math.pi * ind_j;
-#
-#            ps = [
-#                [ # firs point in the aerofoil
-#                    section[i][0] + d_x_i * ind_i,
-#                    c_w_i         + r_w_i * math.cos( phi_i ),
-#                    section[i][2] + r_w_i * math.sin( phi_i )
-#                ],
-#                [ # second point in the aerofoil
-#                    section[i+1][0] + d_x_j * ind_i,
-#                    c_w_j           + r_w_j * math.cos( phi_i ),
-#                    section[i+1][2] + r_w_j * math.sin( phi_i )
-#                ],
-#                [ # extrude the point in the aerofoil
-#                    section[i+1][0] + d_x_j * ind_j,
-#                    c_w_j           + r_w_j * math.cos( phi_j ),
-#                    section[i+1][2] + r_w_j * math.sin( phi_j )
-#                ],
-#                [ # next point in extruded aerofoil
-#                    section[i][0] + d_x_j * ind_j,
-#                    c_w_j           + r_w_j * math.cos( phi_j ),
-#                    section[i][2] + r_w_j * math.sin( phi_j )
-#                ],
-#                [ # first point in away mesh
-#                    radius * math.sin( alp_i ),
-#                    radius * math.cos( alp_i ) * math.cos( phi_i ),
-#                    radius * math.cos( alp_i ) * math.sin( phi_i )
-#                ],
-#                [ # second point in away mesh
-#                    radius * math.sin( alp_j ),
-#                    radius * math.cos( alp_j ) * math.cos( phi_i ),
-#                    radius * math.cos( alp_j ) * math.sin( phi_i )
-#                ],
-#                [ # third point in away mesh
-#                    radius * math.sin( alp_j ),
-#                    radius * math.cos( alp_j ) * math.cos( phi_j ),
-#                    radius * math.cos( alp_j ) * math.sin( phi_j )
-#                ],
-#                [ # forth point in away mesh
-#                    radius * math.sin( alp_i ),
-#                    radius * math.cos( alp_i ) * math.cos( phi_j ),
-#                    radius * math.cos( alp_i ) * math.sin( phi_j )
-#                ]
-#            ];
-#            block_mesh.addPoint( ps[0] );
-#            block_mesh.addPoint( ps[1] );
-#            block_mesh.addPoint( ps[2] );
-#            block_mesh.addPoint( ps[3] );
-#            #block_mesh.addPoint( ps[4] );
-#            #block_mesh.addPoint( ps[5] );
-#            #block_mesh.addPoint( ps[6] );
-#            #block_mesh.addPoint( ps[7] );
-#            #block_mesh.addBlock( ps, [ 1, points[1], points[2] ] , grade );
+    for i in range( 0, len(section)/2 ):
+        if section[i][0] < 0.0:   n_leads  += 1;
+
+    for i in range(0, (len(section))/2 ):
+        for j in range(0, points[0] ):
+
+            # calculate  auxiliary values for the first section
+            d_x_i =    ( section[-i-1][0] - section[i][0] );
+            r_w_i = abs( section[-i-1][1] - section[i][1] ) / 2.0;
+            c_w_i =    ( section[-i-1][1] + section[i][1] ) / 2.0;
+
+            # calculate auxiliary values for the second section
+            d_x_j =    ( section[-i-2][0] - section[i+1][0] );
+            r_w_j = abs( section[-i-2][1] - section[i+1][1] ) / 2.0;
+            c_w_j =    ( section[-i-2][1] + section[i+1][1] ) / 2.0;
+
+            # displacement indexes
+            ind_a = float(j)   / float( points[0] );
+            ind_b = float(j+1) / float( points[0] );
+            phi_a = math.pi * ind_a; # 0 to 180
+            phi_b = math.pi * ind_b; # 0 to 180
+
+            ps[0] = [ #first point in the aerofoil
+                section[i][0] + d_x_i * ind_a,
+                c_w_i         + r_w_i * math.cos( phi_a ),
+                section[i][2] + r_w_i * math.sin( phi_a )
+            ];
+            ps[1] = [ # second point in the aerofoil
+                section[i+1][0] + d_x_j * ind_a,
+                c_w_j           + r_w_j * math.cos( phi_a ),
+                section[i+1][2] + r_w_j * math.sin( phi_a )
+            ];
+            ps[2] = [ # extrude the point in the aerofoil
+                section[i+1][0] + d_x_j * ind_b,
+                c_w_j           + r_w_j * math.cos( phi_b ),
+                section[i+1][2] + r_w_j * math.sin( phi_b )
+            ];
+            ps[3] = [ # next point in extruded aerofoil
+                section[i][0] + d_x_i * ind_b,
+                c_w_i         + r_w_i * math.cos( phi_b ),
+                section[i][2] + r_w_i * math.sin( phi_b )
+            ];
+            ps[4] = [ # first point in away mesh
+                section[i][0],
+                radius * math.cos( phi_a ),
+                section[i][2] + radius  * math.sin( phi_a )
+            ];
+            ps[5] = [ # second point in away mesh
+                section[i+1][0],
+                radius * math.cos( phi_a ),
+                section[i+1][2] + radius * math.sin( phi_a )
+            ];
+            ps[6] = [ # third point in away mesh
+                section[i+1][0],
+                radius * math.cos( phi_b ),
+                section[i+1][2] + radius * math.sin( phi_b )
+            ];
+            ps[7] = [ # forth point in away mesh
+                section[i][0],
+                radius * math.cos( phi_b ),
+                section[i][2] + radius * math.sin( phi_b )
+            ];
+
+            if section[i+0][0] < 0.0:
+                a_i = ( float(k) / n_leads ) * math.pi / 2.0; k += 1;
+                ps[4] = [ # first point in away mesh
+                    - radius * math.sin( a_i ),
+                    radius * math.cos( a_i ) * math.cos( phi_a ),
+                    section[i][2] + radius * math.cos( a_i ) * math.sin( phi_a )
+                ];
+                ps[7] = [ # forth point in away mesh
+                    - radius * math.sin( a_i ),
+                    radius * math.cos( a_i ) * math.cos( phi_b ),
+                    section[i][2] + radius * math.cos( a_i ) * math.sin( phi_b )
+                ];
+
+            #if section[i+1][0] < 0.0:
+            #    a_i = ( float(k) / n_leads ) * math.pi / 2.0;
+            #    ps[5] = [ # second point in away mesh
+            #        - radius * math.sin(a_i),
+            #        radius * math.cos(a_i) * math.cos( phi_a ),
+            #        section[i+1][2] + radius * math.cos(a_i) * math.sin( phi_a )
+            #    ];
+            #    ps[6] = [ # third point in away mesh
+            #        - radius * math.sin(a_i),
+            #        radius * math.cos(a_i) * math.cos( phi_b ),
+            #        section[i+1][2] + radius * math.cos(a_i) * math.sin( phi_b )
+            #    ];
+
+            block_mesh.addPoint( ps[0] );
+            block_mesh.addPoint( ps[1] );
+            block_mesh.addPoint( ps[2] );
+            block_mesh.addPoint( ps[3] );
+            block_mesh.addPoint( ps[4] );
+            block_mesh.addPoint( ps[5] );
+            block_mesh.addPoint( ps[6] );
+            block_mesh.addPoint( ps[7] );
+            #block_mesh.addBlock( ps, [ 1, points[1], points[2] ] , grade );
 
 
 ################################################################################
@@ -337,52 +365,55 @@ block_mesh = BlockMesh();
 
 root  = readAerofoil('constant/aerofoils/NACA/2414', [ -0.958, 0.0,   0.0   ], 2.143 );
 tip_a = readAerofoil('constant/aerofoils/NACA/2411', [ -0.470, 0.109, 4.215 ], 1.050 );
-tip_b = readAerofoil('constant/aerofoils/NACA/2411', [ -0.470, 0.109, 4.265 ], 1.050 );
-tip_c = readAerofoil('constant/aerofoils/NACA/2411', [ -0.470, 0.109, 4.270 ], 1.050 );
+tip_b = readAerofoil('constant/aerofoils/NACA/2411', [ -0.465, 0.109, 4.265 ], 1.045 );
+tip_c = readAerofoil('constant/aerofoils/NACA/2411', [ -0.461, 0.109, 4.300 ], 1.029 );
 
 mid_a = mixSections(root,tip_a,0.544);
 mid_b = mixSections(root,tip_a,0.560);
 mid   = distortSection( mid_a, mid_b, 0.75, 1.0 );
 tip   = distortSection( tip_a, tip_b, 0.75, 1.0 );
 
-makeWingSection(
-    block_mesh,
-    root,
-    mid,
-    0.0,
-    3.0,
-    [1,30,20],  # 30,20
-    [1,1,1000]  # 1000
-);
+#makeWingSection(
+#    block_mesh,
+#    root,
+#    mid,
+#    0.0,
+#    3.0,
+#    [1,30,20],  # 30,20
+#    [1,1,1000]  # 1000
+#);
+#
+#makeWingSection(
+#    block_mesh,
+#    mid,
+#    tip,
+#    0.25,
+#    3.0,
+#    [1,30,20],  # 30,20
+#    [1,1,1000]  # 1000
+#);
+#
+#makeWingSection(
+#    block_mesh,
+#    tip,
+#    tip_c,
+#    0,
+#    3.0,
+#    [1,1,20],  # 30,20
+#    [1,1,1000]  # 1000
+#);
 
-makeWingSection(
-    block_mesh,
-    mid,
-    tip,
-    0.25,
-    3.0,
-    [1,30,20],  # 30,20
-    [1,1,1000]  # 1000
+makeWinglet( #winglet radius should be 135
+   block_mesh,
+   tip_c,
+   3.0,
+   [3,1,20],    # 1,20
+   [1,1,1000]  # 1000
 );
-
-makeWingSection(
-    block_mesh,
-    tip,
-    tip_c,
-    0.0,
-    3.0,
-    [1,1,20],   # 30,20
-    [1,1,1000]  # 1000
-);
-
-#akeWinglet(
-#   block_mesh,
-#   tip,
-#   1.0,
-#   [20,1,20],    # 1,20
-#   [1,1,1000]  # 1000
-#;
 
 block_mesh.write();
 
 os.system('blockMesh')
+
+# 1969 - 4215
+#   63 - 135
