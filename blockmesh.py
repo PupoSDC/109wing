@@ -101,7 +101,8 @@ class BlockMesh:
                 "    arc " +  repr(arc[0]) + " " +  repr(arc[1]) + " ("
                 + repr(arc[2][0]) + " "
                 + repr(arc[2][1]) + " "
-                + repr(arc[2][2]) + ")\n"
+                + repr(arc[2][2]) + ") // " +
+                repr( self.arclist.index(arc) ) + " \n"
             );
 
         # Write down the boundaries
@@ -231,18 +232,31 @@ def makeWingSection( block_mesh, sec_1, sec_2, p_cut, radius, points, grade ):
 
         # Create trailing edge Section
         if( i == 0 ):
+            te_1 = [ radius, sp[1][1], sp[1][2] ];
+            te_2 = [ radius, sp[2][1], sp[2][2] ];
+            ac_1 = [ radius*math.cos(0.4), radius*math.sin(0.4), sp[1][2] ];
+            ac_2 = [ radius*math.cos(0.4), radius*math.sin(0.4), sp[2][2] ];
+            ac_3 = [ radius*math.cos(0.4),-radius*math.sin(0.4), sp[1][2] ];
+            ac_4 = [ radius*math.cos(0.4),-radius*math.sin(0.4), sp[2][2] ];
             block_mesh.addBlock(
-                [ sp[1], ps[0], ps[3], sp[2], sp[5], ps[4], ps[7] ,sp[6] ],
+                [ ps[0], ps[0], ps[3], ps[3], te_1, ps[4] ,ps[7], te_2 ],
                 [ len(sec_1)/8, points[1], points[2] ],
                 grade
             );
-            block_mesh.addArc( [ sp[5], ps[4], [radius,0,sp[5][2]] ]);
-            block_mesh.addArc( [ sp[6], ps[7], [radius,0,sp[6][2]] ]);
-
+            block_mesh.addBlock(
+                [ sp[1], sp[1], sp[2], sp[2], sp[5], te_1, te_2, sp[6] ],
+                [ len(sec_1)/8, points[1], points[2] ],
+                grade
+            );
+            block_mesh.addArc( [ te_1, ps[4], ac_1 ]);
+            block_mesh.addArc( [ te_2, ps[7], ac_2 ]);
+            block_mesh.addArc( [ te_1, sp[5], ac_3 ]);
+            block_mesh.addArc( [ te_2, sp[6], ac_4 ]);
             if sec_1[0][2] == 0.0:
-                block_mesh.addFace("left",[ps[0],ps[4],sp[5],sp[1]],"symmetry");
-
-            block_mesh.addFace("freestream",[sp[5],ps[4],ps[7],sp[6]],"patch");
+                block_mesh.addFace("left",[ps[0],ps[0],ps[4],te_1],"symmetry");
+                block_mesh.addFace("left",[sp[1],sp[1],te_1,sp[5]],"symmetry");
+            block_mesh.addFace("freestream",[te_2,te_1,ps[4],ps[7]],"patch");
+            block_mesh.addFace("freestream",[te_1,te_2,sp[6],sp[5]],"patch");
 
 #Creates a winglet section.
 def makeWinglet( block_mesh, section, radius, points, grade ):
@@ -315,21 +329,27 @@ def makeWinglet( block_mesh, section, radius, points, grade ):
             block_mesh.addFace("freestream", [ps[4],ps[5],ps[6],ps[7]], "patch");
             block_mesh.addFace("wing",       [ps[3],ps[2],ps[1],ps[0]], "wall");
 
-
-        # Create trailing edge Section
-        if( i == 0 ):
-            block_mesh.addBlock(
-                [ sp[1], ps[0], ps[3], sp[2], sp[5], ps[4], ps[7] ,sp[6] ],
-                [ len(sec_1)/8, points[1], points[2] ],
-                grade
-            );
-            block_mesh.addArc( [ sp[5], ps[4], [radius,0,sp[5][2]] ]);
-            block_mesh.addArc( [ sp[6], ps[7], [radius,0,sp[6][2]] ]);
-
-            if sec_1[0][2] == 0.0:
-                block_mesh.addFace("left",[ps[0],ps[4],sp[5],sp[1]],"symmetry");
-
-            block_mesh.addFace("freestream",[sp[5],ps[4],ps[7],sp[6]],"patch");
+            # Create trailing edge Section
+            if( i == 0 ):
+                t_e = [ radius, ps[0][1], ps[0][2] ];
+                a_c_1 = [
+                    radius*math.sin(0.4),
+                    radius*math.cos(0.4) * math.cos( phi_a ),
+                    section[i][2] + radius * math.cos( 0.4 ) * math.sin( phi_a )
+                ];
+                a_c_2 = [
+                    radius*math.sin(0.4),
+                    radius*math.cos(0.4) * math.cos( phi_b ),
+                    section[i][2] + radius * math.cos( 0.4 ) * math.sin( phi_b )
+                ];
+                block_mesh.addBlock(
+                    [  ps[0], ps[0], ps[3], ps[3], t_e, ps[4], ps[7] ,t_e ],
+                    [ len(section)/8, points[1], points[2] ],
+                    grade
+                );
+                block_mesh.addFace("freestream",[t_e,t_e,ps[4],ps[7]],"patch");
+                if( j > 0 ):
+                    block_mesh.addArc( [ t_e, ps[4], a_c_1 ] );
 
 
 ################################################################################
