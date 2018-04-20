@@ -14,7 +14,7 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-Uinlet (-208 0 0);
+Uinlet (208 0 0);
 
 dimensions      [0 1 -1 0 0 0 0];
 
@@ -35,7 +35,7 @@ boundaryField
     }
     "wing.*"
     {
-        type noSlip;        
+        type noSlip;
     }
 
     #includeEtc "caseDicts/setConstraintTypes"

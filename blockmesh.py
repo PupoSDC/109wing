@@ -11,6 +11,7 @@ class BlockMesh:
     pointlist = [];
     hexblocks = [];
     boundlist = [];
+    arclist   = [];
 
     # Adds a point to a point list only if it does not exist previously.
     def addPoint(self, point ):
@@ -21,6 +22,12 @@ class BlockMesh:
         ];
         if point not in self.pointlist: self.pointlist.append(point)
         return self.pointlist.index(point);
+
+    # Creates one arc for the mesh between 2 points.
+    def addArc( self, arc ):
+       arc = [self.addPoint(arc[0]),self.addPoint(arc[1]),arc[2]];
+       if arc not in self.arclist: self.arclist.append(arc)
+       return self.arclist.index(arc);
 
     # Creates an HExablock between 8 points
     def addBlock(self, points, n_points, grade ):
@@ -81,13 +88,21 @@ class BlockMesh:
                 repr(hex[8][0]) + " " +
                 repr(hex[8][1]) + " " +
                 repr(hex[8][2]) + ") simpleGrading (" +
-                repr(hex[9][0]) +" "+
-                repr(hex[9][1]) +" "+
-                repr(hex[9][2]) + ")\n"
+                repr(hex[9][0]) + " " +
+                repr(hex[9][1]) + " " +
+                repr(hex[9][2]) + ") // " +
+                repr( self.hexblocks.index(hex) ) + " \n"
             );
 
         # Write down the edges
         blockMeshDict.write( ");\n\nedges\n(\n")
+        for arc in self.arclist:
+            blockMeshDict.write(
+                "    arc " +  repr(arc[0]) + " " +  repr(arc[1]) + " ("
+                + repr(arc[2][0]) + " "
+                + repr(arc[2][1]) + " "
+                + repr(arc[2][2]) + ")\n"
+            );
 
         # Write down the boundaries
         blockMeshDict.write( ");\n\nboundary\n(\n")
@@ -157,46 +172,34 @@ def distortSection( section_1, section_2, p_start, p_end ):
 def makeWingSection( block_mesh, sec_1, sec_2, p_cut, radius, points, grade ):
     length   = sec_1[ len(sec_1) / 2 + 1 ][0] - sec_1[0][0];
     d_cut    = sec_1[0][0] + p_cut * length;
-    n_leads  = 0; k = 0;
     n_trails = 0;
     ps       = range(0,8);
     sp       = range(0,8);
 
     for i in range( 0, len(sec_1)/2 ):
-        if sec_1[i][0] < 0.0:   n_leads  += 1;
         if sec_1[i][0] > d_cut: n_trails += 1;
 
     for i in range( 0, len(sec_1)/2 ):
+
+        a_i = ( float(i+0) / float(len(sec_1)-1)*1.5 - 0.25 ) * math.pi / 1.0;
+        a_j = ( float(i+1) / float(len(sec_1)-1)*1.5 - 0.25 ) * math.pi / 1.0;
+
         ps[0] = sec_1[i+0];
         ps[1] = sec_1[i+1];
         ps[2] = sec_2[i+1];
         ps[3] = sec_2[i+0];
-        ps[4] = [ sec_1[i+0][0], radius,  sec_1[i+0][2]   ];
-        ps[5] = [ sec_1[i+1][0], radius,  sec_1[i+1][2]   ];
-        ps[6] = [ sec_2[i+1][0], radius,  sec_2[i+1][2]   ];
-        ps[7] = [ sec_2[i+0][0], radius,  sec_2[i+0][2]   ];
+        ps[4] = [ -radius*math.sin(a_i), radius*math.cos(a_i), sec_1[i+0][2] ];
+        ps[5] = [ -radius*math.sin(a_j), radius*math.cos(a_j), sec_1[i+1][2] ];
+        ps[6] = [ -radius*math.sin(a_j), radius*math.cos(a_j), sec_2[i+1][2] ];
+        ps[7] = [ -radius*math.sin(a_i), radius*math.cos(a_i), sec_2[i+0][2] ];
         sp[0] = sec_1[ -i-2];
         sp[1] = sec_1[ -i-1];
         sp[2] = sec_2[ -i-1];
         sp[3] = sec_2[ -i-2];
-        sp[4] = [ sec_1[-i-2][0], -radius, sec_1[-i-2][2] ];
-        sp[5] = [ sec_1[-i-1][0], -radius, sec_1[-i-1][2] ];
-        sp[6] = [ sec_2[-i-1][0], -radius, sec_2[-i-1][2] ];
-        sp[7] = [ sec_2[-i-2][0], -radius, sec_2[-i-2][2] ];
-
-        if sec_1[i+0][0] < 0.0:
-            a_i = ( float(k) / n_leads ) * math.pi / 2.0; k += 1;
-            ps[4][0] = -radius*math.sin(a_i); ps[4][1] =  radius*math.cos(a_i);
-            ps[7][0] = -radius*math.sin(a_i); ps[7][1] =  radius*math.cos(a_i);
-            sp[5][0] = -radius*math.sin(a_i); sp[5][1] = -radius*math.cos(a_i);
-            sp[6][0] = -radius*math.sin(a_i); sp[6][1] = -radius*math.cos(a_i);
-
-        if sec_1[i+1][0] < 0.0:
-            a_i = ( float(k) / n_leads ) * math.pi / 2.0;
-            ps[5][0] = -radius*math.sin(a_i); ps[5][1] =  radius*math.cos(a_i);
-            ps[6][0] = -radius*math.sin(a_i); ps[6][1] =  radius*math.cos(a_i);
-            sp[4][0] = -radius*math.sin(a_i); sp[4][1] = -radius*math.cos(a_i);
-            sp[7][0] = -radius*math.sin(a_i); sp[7][1] = -radius*math.cos(a_i);
+        sp[4] = [ -radius*math.sin(a_j), -radius*math.cos(a_j), sec_1[-i-2][2] ];
+        sp[5] = [ -radius*math.sin(a_i), -radius*math.cos(a_i), sec_1[-i-1][2] ];
+        sp[6] = [ -radius*math.sin(a_i), -radius*math.cos(a_i), sec_2[-i-1][2] ];
+        sp[7] = [ -radius*math.sin(a_j), -radius*math.cos(a_j), sec_2[-i-2][2] ];
 
         # Create main outer wing blocks and free stream boundaries
         block_mesh.addBlock( ps[0:8], points, grade );
@@ -208,11 +211,12 @@ def makeWingSection( block_mesh, sec_1, sec_2, p_cut, radius, points, grade ):
         if( i < n_trails ):
             block_mesh.addBlock(
                 [ sp[1], sp[0], sp[3], sp[2], ps[0], ps[1], ps[2], ps[3] ],
-                [ points[0], points[1], points[2] ],
-                [ 1 , 1 , 1 ]
+                [ points[0], points[1], len(sec_1)/8 ],
+                [ 1, 1, 1 ]
             );
             block_mesh.addFace("wing", [ sp[1], sp[0], ps[1], ps[0] ], "wall" );
             block_mesh.addFace("wing", [ sp[3], sp[2], ps[3], ps[2] ], "wall" );
+
         if( i >= n_trails ):
             block_mesh.addFace("wing", ps[0:4], "wall" );
             block_mesh.addFace("wing", sp[0:4], "wall" );
@@ -220,45 +224,30 @@ def makeWingSection( block_mesh, sec_1, sec_2, p_cut, radius, points, grade ):
         if( i == n_trails and i != 0 ):
             block_mesh.addFace("wing", [ sp[2], sp[1], ps[3], ps[0] ], "wall");
 
+        # Add left surfaces if first section
         if sec_1[i][2] == 0.0:
             block_mesh.addFace("left", [ps[0],ps[1],ps[4],ps[5]], "symmetry");
             block_mesh.addFace("left", [sp[0],sp[1],sp[4],sp[5]], "symmetry");
 
-        # Create trailing edge Sections
+        # Create trailing edge Section
         if( i == 0 ):
-            tp_0 = [ radius, radius     , sec_1[0][2] ];
-            tp_1 = [ radius, sec_1[0][1], sec_1[0][2] ];
-            tp_2 = [ radius, -radius    , sec_1[0][2] ];
-            te_0 = [ radius, radius     , sec_2[0][2] ];
-            te_1 = [ radius, sec_2[0][1], sec_2[0][2] ];
-            te_2 = [ radius, -radius    , sec_2[0][2] ];
             block_mesh.addBlock(
-                [ ps[0], ps[3], te_1, tp_1, ps[4], ps[7], te_0, tp_0 ],
-                [ points[1], points[2], points[2] ],
-                [ grade[1] , grade[2] , grade[2]  ]
+                [ sp[1], ps[0], ps[3], sp[2], sp[5], ps[4], ps[7] ,sp[6] ],
+                [ len(sec_1)/8, points[1], points[2] ],
+                grade
             );
-            block_mesh.addBlock(
-                [ sp[5], sp[6], te_2, tp_2, sp[1], sp[2], te_1, tp_1 ],
-                [ points[1], points[2], points[2] ],
-                [ grade[1] , grade[2] , 1.0/grade[2]  ]
-            );
+            block_mesh.addArc( [ sp[5], ps[4], [radius,0,sp[5][2]] ]);
+            block_mesh.addArc( [ sp[6], ps[7], [radius,0,sp[6][2]] ]);
 
             if sec_1[0][2] == 0.0:
-                block_mesh.addFace("left", [ps[0],ps[4],tp_0,tp_1], "symmetry");
-                block_mesh.addFace("left", [tp_2,sp[5],sp[1],tp_1], "symmetry");
+                block_mesh.addFace("left",[ps[0],ps[4],sp[5],sp[1]],"symmetry");
 
-            block_mesh.addFace("freestream", [ps[7],te_0,tp_0,ps[4]], "patch");
-            block_mesh.addFace("freestream", [te_1,tp_1,tp_0,te_0],   "patch");
-            block_mesh.addFace("freestream", [te_2,tp_2,tp_1,te_1],   "patch");
-            block_mesh.addFace("freestream", [sp[6],sp[5],tp_2,te_2], "patch");
+            block_mesh.addFace("freestream",[sp[5],ps[4],ps[7],sp[6]],"patch");
 
 #Creates a winglet section.
 def makeWinglet( block_mesh, section, radius, points, grade ):
-    n_leads  = 0; k = 0;
-    ps = range(0,8);
 
-    for i in range( 0, len(section)/2 ):
-        if section[i][0] < 0.0:   n_leads  += 1;
+    ps = range(0,8);
 
     for i in range(0, (len(section))/2 ):
         for j in range(0, points[0] ):
@@ -267,11 +256,13 @@ def makeWinglet( block_mesh, section, radius, points, grade ):
             d_x_i =    ( section[-i-1][0] - section[i][0] );
             r_w_i = abs( section[-i-1][1] - section[i][1] ) / 2.0;
             c_w_i =    ( section[-i-1][1] + section[i][1] ) / 2.0;
+            a_i = ( float(i+0) / float(len(section)-1)*1.5 - 0.25 ) * math.pi;
 
             # calculate auxiliary values for the second section
             d_x_j =    ( section[-i-2][0] - section[i+1][0] );
             r_w_j = abs( section[-i-2][1] - section[i+1][1] ) / 2.0;
             c_w_j =    ( section[-i-2][1] + section[i+1][1] ) / 2.0;
+            a_j = ( float(i+1) / float(len(section)-1)*1.5 - 0.25 ) * math.pi;
 
             # displacement indexes
             ind_a = float(j)   / float( points[0] );
@@ -300,83 +291,46 @@ def makeWinglet( block_mesh, section, radius, points, grade ):
                 section[i][2] + r_w_i * math.sin( phi_b )
             ];
             ps[4] = [ # first point in away mesh
-                section[i][0] + d_x_i * ind_a,
-                radius * math.cos( phi_a ),
-                section[i][2] + radius  * math.sin( phi_a )
+                - radius * math.sin( a_i ),
+                radius * math.cos( a_i ) * math.cos( phi_a ),
+                section[i][2] + radius * math.cos( a_i ) * math.sin( phi_a )
             ];
             ps[5] = [ # second point in away mesh
-                section[i+1][0] + d_x_j * ind_a,
-                radius * math.cos( phi_a ),
-                section[i+1][2] + radius * math.sin( phi_a )
+                - radius * math.sin(a_j),
+                radius * math.cos(a_j) * math.cos( phi_a ),
+                section[i+1][2] + radius * math.cos(a_j) * math.sin( phi_a )
             ];
             ps[6] = [ # third point in away mesh
-                section[i+1][0] + d_x_j * ind_b,
-                radius * math.cos( phi_b ),
-                section[i+1][2] + radius * math.sin( phi_b )
+                - radius * math.sin(a_j),
+                radius * math.cos(a_j) * math.cos( phi_b ),
+                section[i+1][2] + radius * math.cos(a_j) * math.sin( phi_b )
             ];
             ps[7] = [ # forth point in away mesh
-                section[i][0] + d_x_i * ind_b,
-                radius * math.cos( phi_b ),
-                section[i][2] + radius * math.sin( phi_b )
+                - radius * math.sin( a_i ),
+                radius * math.cos( a_i ) * math.cos( phi_b ),
+                section[i][2] + radius * math.cos( a_i ) * math.sin( phi_b )
             ];
-
-            if section[i+0][0] < 0.0:
-                a_i = ( float(k-1) / n_leads ) * math.pi / 2.0;
-                ps[4] = [ # first point in away mesh
-                    - radius * math.sin( a_i ),
-                    radius * math.cos( a_i ) * math.cos( phi_a ),
-                    section[i][2] + radius * math.cos( a_i ) * math.sin( phi_a )
-                ];
-                ps[7] = [ # forth point in away mesh
-                    - radius * math.sin( a_i ),
-                    radius * math.cos( a_i ) * math.cos( phi_b ),
-                    section[i][2] + radius * math.cos( a_i ) * math.sin( phi_b )
-                ];
-
-            if section[i+1][0] < 0.0:
-                a_i = ( float(k) / n_leads ) * math.pi / 2.0;
-                ps[5] = [ # second point in away mesh
-                    - radius * math.sin(a_i),
-                    radius * math.cos(a_i) * math.cos( phi_a ),
-                    section[i+1][2] + radius * math.cos(a_i) * math.sin( phi_a )
-                ];
-                ps[6] = [ # third point in away mesh
-                    - radius * math.sin(a_i),
-                    radius * math.cos(a_i) * math.cos( phi_b ),
-                    section[i+1][2] + radius * math.cos(a_i) * math.sin( phi_b )
-                ];
 
             block_mesh.addBlock( ps, [ 1, points[1], points[2] ] , grade );
             block_mesh.addFace("freestream", [ps[4],ps[5],ps[6],ps[7]], "patch");
             block_mesh.addFace("wing",       [ps[3],ps[2],ps[1],ps[0]], "wall");
 
-            if i == 0:
-                te_0 = [
-                    radius,
-                    section[0][1],
-                    section[0][2]
-                ];
-                te_1 = [
-                    radius,
-                    radius * math.cos( phi_a),
-                    section[0][2] + radius * math.sin( phi_a )
-                ];
-                te_2 = [
-                    radius,
-                    radius * math.cos( phi_b),
-                    section[0][2] + radius * math.sin( phi_b )
-                ];
-                block_mesh.addBlock(
-                    [ ps[0], ps[4], ps[7], ps[0], te_0, te_1, te_2, te_0 ],
-                    [ points[2], points[1], points[2] ],
-                    [ grade[2], grade[1], grade[2] ],
-                );
-                block_mesh.addFace("freestream", [te_0, te_1, te_2, te_0], "patch");
-                block_mesh.addFace("freestream", [ps[4], ps[7], te_1, te_2], "patch");
 
+        # Create trailing edge Section
+        if( i == 0 ):
+            block_mesh.addBlock(
+                [ sp[1], ps[0], ps[3], sp[2], sp[5], ps[4], ps[7] ,sp[6] ],
+                [ len(sec_1)/8, points[1], points[2] ],
+                grade
+            );
+            block_mesh.addArc( [ sp[5], ps[4], [radius,0,sp[5][2]] ]);
+            block_mesh.addArc( [ sp[6], ps[7], [radius,0,sp[6][2]] ]);
 
-        if section[i+1][0] < 0.0:
-            k += 1;
+            if sec_1[0][2] == 0.0:
+                block_mesh.addFace("left",[ps[0],ps[4],sp[5],sp[1]],"symmetry");
+
+            block_mesh.addFace("freestream",[sp[5],ps[4],ps[7],sp[6]],"patch");
+
 
 ################################################################################
 ## Script ######################################################################
@@ -399,9 +353,9 @@ makeWingSection(
     root,
     mid,
     0.0,
-    15.0,
+    3.0,
     [1,15,20],  # 30,20
-    [1,1,1000]  # 1000
+    [1,1,1000]
 );
 
 makeWingSection(
@@ -409,9 +363,9 @@ makeWingSection(
     mid,
     tip,
     0.25,
-    15.0,
+    3.0,
     [1,15,20],  # 30,20
-    [1,1,1000]  # 1000
+    [1,1,1000]
 );
 
 makeWingSection(
@@ -419,15 +373,15 @@ makeWingSection(
     tip,
     tip_c,
     0,
-    15.0,
+    3.0,
     [1,1,20],  # 30,20
-    [1,1,1000]  # 1000
+    [1,1,1000]
 );
 
 makeWinglet( #winglet radius should be 135
    block_mesh,
    tip_c,
-   15.0,
+   3.0,
    [20,1,20],    # 1,20
    [1,1,1000]  # 1000
 );
