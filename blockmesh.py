@@ -348,50 +348,29 @@ def makeWinglet( block_mesh, section, radius, points, grade ):
 
 block_mesh = BlockMesh();
 
-root  = readAerofoil('constant/aerofoils/NACA/2414', [ -0.958, 0.0,   0.0   ], 2.143 );
-tip_a = readAerofoil('constant/aerofoils/NACA/2411', [ -0.470, 0.109, 4.215 ], 1.050 );
-tip_b = readAerofoil('constant/aerofoils/NACA/2411', [ -0.465, 0.109, 4.265 ], 1.045 );
-tip_c = readAerofoil('constant/aerofoils/NACA/2411', [ -0.461, 0.109, 4.300 ], 1.029 );
-
-mid_a = mixSections(root,tip_a,0.544);
-mid_b = mixSections(root,tip_a,0.560);
-mid   = distortSection( mid_a, mid_b, 0.75, 1.0 );
-tip   = distortSection( tip_a, tip_b, 0.75, 1.0 );
+root  = readAerofoil('sources/NACA/2414', [ -0.958, 0.0,   0.0   ], 2.143 );
+tip   = readAerofoil('sources/NACA/2411', [ -0.473, 0.109, 4.215 ], 1.050 );
+#tip_b = readAerofoil('sources/NACA/2411', [ -0.395, 0.109, 4.265 ], 0.877 );
+#tip_c = readAerofoil('sources/NACA/2411', [ -0.260, 0.109, 4.300 ], 0.577 );
+#mid_a = mixSections(root,tip_a,0.544);
+#mid_b = mixSections(root,tip_a,0.560);
+#mid   = distortSection( mid_a, mid_b, 0.75, 1.0 );
+#tip   = distortSection( tip_a, tip_b, 0.75, 1.0 );
 
 makeWingSection(
     block_mesh,
     root,
-    mid,
+    tip,
     0.0,
-    3.0,
+    15.0,
     [1,20,15],  # 30,20
-    [1,1000,1]
-);
-
-makeWingSection(
-    block_mesh,
-    mid,
-    tip,
-    0.25,
-    3.0,
-    [1,20,15],  # 30,20
-    [1,1000,1]
-);
-
-makeWingSection(
-    block_mesh,
-    tip,
-    tip_c,
-    0,
-    3.0,
-    [1,20,1],  # 30,20
     [1,1000,1]
 );
 
 makeWinglet( #winglet radius should be 135
    block_mesh,
-   tip_c,
-   3.0,
+   tip,
+   15.0,
    [1,20,20],    # 1,20
    [1,1000,1]  # 1000
 );
