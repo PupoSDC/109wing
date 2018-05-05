@@ -363,8 +363,8 @@ makeWingSection(
     tip,
     0.0,
     15.0,
-    [1,20,15],  # 30,20
-    [1,1000,1]
+    [1,20,30],  # 30,20
+    [1,100,1]
 );
 
 makeWinglet( #winglet radius should be 135
@@ -372,7 +372,7 @@ makeWinglet( #winglet radius should be 135
    tip,
    15.0,
    [1,20,20],    # 1,20
-   [1,1000,1]  # 1000
+   [1,100,1]  # 1000
 );
 
 block_mesh.write();
